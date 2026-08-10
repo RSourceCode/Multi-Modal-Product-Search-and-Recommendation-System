@@ -1,11 +1,11 @@
-from datasets import load_dataset, Dataset, Features, Value, List
-from pathlib import Path
 import os
 import pandas as pd
+from typing import Literal
 from dotenv import load_dotenv
+from datasets import load_dataset, Dataset, Features, Value, List
 
 # Data is quite large so moved it away from the working directory
-BASE_DIR =  "E:/Datasets/mm-prod-search-and-reco/" # Path.absolute(__file__).parent
+BASE_DIR =  "E:/Datasets/mm-prod-search-and-reco" # Path.absolute(__file__).parent
 PROD_DATA_DIR = f"{BASE_DIR}/data/prod"
 REVIEW_DATA_DIR = f"{BASE_DIR}/data/review"
 
@@ -15,11 +15,11 @@ class Data():
     def __init__(self):
         os.makedirs(PROD_DATA_DIR, exist_ok=True)
         os.makedirs(REVIEW_DATA_DIR, exist_ok=True)
-        self.esci_data_loader()
-        self.sqid_data_loader()
-        self.amazon_review_data_loader()
+        self.__esci_data_loader()
+        self.__sqid_data_loader()
+        self.__amazon_review_data_loader()
 
-    def esci_data_loader(self):
+    def __esci_data_loader(self):
         print("Loading ESIC DATA...")
         tables = ["queries", "products", "sources"]
         for table in tables:
@@ -29,7 +29,7 @@ class Data():
                 temp_table[1].to_parquet(f"{PROD_DATA_DIR}/{table}_test.parquet")
         print("ESIC Downloaded succesfully!")
 
-    def sqid_data_loader(self):
+    def __sqid_data_loader(self):
         print("Loading SQID DATA...")
         tables = ["product_image_urls", "product_features", "query_features"]
         for table in tables:
@@ -38,7 +38,7 @@ class Data():
                 temp_table.to_parquet(f"{PROD_DATA_DIR}/{table}.parquet")
         print("SQID Downloaded succesfully!")
 
-    def amazon_review_data_loader(self):
+    def __amazon_review_data_loader(self, num_rows = 1000):
         print("Loading Amazon Review DATA...")
         tables = [
                 "All_Beauty", "Amazon_Fashion", "Appliances", "Arts_Crafts_and_Sewing", "Automotive",
@@ -93,17 +93,27 @@ class Data():
         
         for table in tables:
             if not os.path.exists(f"{REVIEW_DATA_DIR}/{table}_review.parquet"):
-                # Download only the top 1000 entries from each category
+                # Download only the top num_rows entries from each category
                 review_table = load_dataset("json", data_files=f"https://huggingface.co/datasets/McAuley-Lab/Amazon-Reviews-2023/resolve/main/raw/review_categories/{table}.jsonl", split='train', streaming=True)
-                sub_review_table = Dataset.from_list(list(review_table.take(1000)))
+                sub_review_table = Dataset.from_list(list(review_table.take(num_rows)))
                 sub_review_table.to_parquet(f"{REVIEW_DATA_DIR}/{table}_review.parquet")
             if not os.path.exists(f"{REVIEW_DATA_DIR}/{table}_meta.parquet"):
-                # Download only the top 1000 entries from each category
+                # Download only the top num_rows entries from each category
                 meta_table = load_dataset("json", data_files=f"https://huggingface.co/datasets/McAuley-Lab/Amazon-Reviews-2023/resolve/main/raw/meta_categories/meta_{table}.jsonl", split='train', streaming=True, features=meta_features)
-                sub_meta_table = Dataset.from_list(list(meta_table.take(1000)))
+                sub_meta_table = Dataset.from_list(list(meta_table.take(num_rows)))
                 sub_meta_table.to_parquet(f"{REVIEW_DATA_DIR}/{table}_meta.parquet")
 
         print("Amazon Review Data Downloaded succesfully!")
+
+    def get_data(self, choice1 : Literal['train', 'validate', 'test'] = 'train'):
+        product_features_table = pd.read_parquet(f'{PROD_DATA_DIR}/product_features.parquet')
+        product_image_urls_table = pd.read_parquet(f'{PROD_DATA_DIR}/product_image_urls.parquet')
+        products_test_table = pd.read_parquet(f'{PROD_DATA_DIR}/products_test.parquet')
+        product_train_table = pd.read_parquet(f'{PROD_DATA_DIR}/products_train.parquet')
+        queries_train_table = pd.read_parquet(f'{PROD_DATA_DIR}/queries_train.parquet')
+        query_features_table = pd.read_parquet(f'{PROD_DATA_DIR}/query_features.parquet')
+
+        return product_features_table, product_image_urls_table, products_test_table, product_train_table, queries_train_table, query_features_table
 
 if __name__ == "__main__":
     data = Data()

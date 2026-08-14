@@ -12,12 +12,15 @@ REVIEW_DATA_DIR = f"{BASE_DIR}/data/review"
 load_dotenv()
 
 class Data():
-    def __init__(self):
+    def __init__(self, train_size = 0.7, val_size = 0.1, test_size = 0.2):
         os.makedirs(PROD_DATA_DIR, exist_ok=True)
         os.makedirs(REVIEW_DATA_DIR, exist_ok=True)
         self.__esci_data_loader()
         self.__sqid_data_loader()
         self.__amazon_review_data_loader()
+        self.train_size = train_size
+        self.val_size = val_size
+        self.test_size = test_size
 
     def __esci_data_loader(self):
         print("Loading ESIC DATA...")
@@ -105,7 +108,29 @@ class Data():
 
         print("Amazon Review Data Downloaded succesfully!")
 
-    def get_data(self, choice1 : Literal['train', 'validate', 'test'] = 'train'):
+    def get_complete_data(self, choice1 : Literal['train', 'validation', 'test'] = 'train'):
+        product_image_urls_table = pd.read_parquet(f'{PROD_DATA_DIR}/product_image_urls.parquet')
+        products_test_table = pd.read_parquet(f'{PROD_DATA_DIR}/products_test.parquet')
+        products_train_table = pd.read_parquet(f'{PROD_DATA_DIR}/products_train.parquet')
+        queries_table = pd.read_parquet(f'{PROD_DATA_DIR}/queries_train.parquet')
+
+        product_table = pd.concat([products_train_table, products_test_table], ignore_index=True)
+        comb_table =  queries_table.join(product_table).join(product_image_urls_table)
+        eng_table =  comb_table[comb_table.loc['product_locale'] == 'us']
+
+        if(choice1 == 'train'):
+            return eng_table[ : int(len(eng_table) * self.train_size)]
+
+        if(choice1 == 'validation'):
+            return eng_table[ int(len(eng_table) * self.train_size) : int(len(eng_table) * (self.val_size + self.train_size))]
+
+        if(choice1 == 'test'):
+            return eng_table[int(len(eng_table) * (self.val_size + self.train_size)) : ]
+        
+        
+        
+
+    def get_data(self):
         product_features_table = pd.read_parquet(f'{PROD_DATA_DIR}/product_features.parquet')
         product_image_urls_table = pd.read_parquet(f'{PROD_DATA_DIR}/product_image_urls.parquet')
         products_test_table = pd.read_parquet(f'{PROD_DATA_DIR}/products_test.parquet')

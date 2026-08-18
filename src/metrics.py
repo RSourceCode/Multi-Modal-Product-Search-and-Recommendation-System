@@ -20,7 +20,7 @@ def Precision_K(K : int, retrieved_prods: pd.DataFrame, actual_prods: pd.DataFra
 def DCG_K(K : int, retrieved_prods: pd.DataFrame, actual_prods: pd.DataFrame):
     relevance_map = {'E': 3, 'S': 2, 'C': 1, 'I': 0}
     merged = pd.merge(retrieved_prods[:K], actual_prods, how='left', on='product_id')
-    relevance = merged['esci_label_x'].map(relevance_map).fillna(0).values
+    relevance = merged['esci_label_y'].map(relevance_map).fillna(0).values
 
     return sum(rel / np.log2(rank + 1) for rank, rel in enumerate(relevance, 1))
 

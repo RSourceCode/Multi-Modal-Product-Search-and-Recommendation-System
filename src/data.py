@@ -115,8 +115,8 @@ class Data():
         queries_table = pd.read_parquet(f'{PROD_DATA_DIR}/queries_train.parquet')
 
         product_table = pd.concat([products_train_table, products_test_table], ignore_index=True)
-        comb_table =  queries_table.join(product_table).join(product_image_urls_table)
-        eng_table =  comb_table[comb_table.loc['product_locale'] == 'us']
+        comb_table =  queries_table.merge(product_table, on='product_id', how='left').merge(product_image_urls_table, on='product_id', how='left')
+        eng_table =  comb_table[comb_table['product_locale_x'] == 'us'].dropna(how='any').reset_index(drop=True)
 
         if(choice1 == 'train'):
             return eng_table[ : int(len(eng_table) * self.train_size)]
@@ -125,10 +125,7 @@ class Data():
             return eng_table[ int(len(eng_table) * self.train_size) : int(len(eng_table) * (self.val_size + self.train_size))]
 
         if(choice1 == 'test'):
-            return eng_table[int(len(eng_table) * (self.val_size + self.train_size)) : ]
-        
-        
-        
+            return eng_table[int(len(eng_table) * (self.val_size + self.train_size)) : ]        
 
     def get_data(self):
         product_features_table = pd.read_parquet(f'{PROD_DATA_DIR}/product_features.parquet')
@@ -139,6 +136,11 @@ class Data():
         query_features_table = pd.read_parquet(f'{PROD_DATA_DIR}/query_features.parquet')
 
         return product_features_table, product_image_urls_table, products_test_table, product_train_table, queries_train_table, query_features_table
+
+    def clean_data(self, data):
+        # product_title , product_description , product_bullet_point , product_brand , product_color <- clean these columns
+        pass
+
 
 if __name__ == "__main__":
     data = Data()

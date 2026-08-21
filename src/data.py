@@ -152,6 +152,21 @@ class Data():
 
         return d_clean_prod[d_clean_prod['product_locale'] == 'us'].dropna().reset_index(drop=True)
 
+    def get_clip_embeddings(self, choice : Literal['train', 'validation', 'test'] = 'train'):
+        product_features_table = pd.read_parquet(f'{PROD_DATA_DIR}/product_features.parquet')
+        query_features_table = pd.read_parquet(f'{PROD_DATA_DIR}/query_features.parquet')
+        train_idx = int(len(product_features_table) * self.train_size)
+        val_idx = int(len(product_features_table) * (self.val_size + self.train_size))
+        if(choice == 'train'):
+            return product_features_table[ : train_idx], query_features_table[ : train_idx]
+
+        if(choice == 'validation'):
+            return product_features_table[ train_idx : val_idx], query_features_table[ train_idx : val_idx]
+
+        if(choice == 'test'):
+            return product_features_table[val_idx : ] , query_features_table[val_idx : ] 
+        return product_features_table, query_features_table
+
     def get_data(self):
         product_features_table = pd.read_parquet(f'{PROD_DATA_DIR}/product_features.parquet')
         product_image_urls_table = pd.read_parquet(f'{PROD_DATA_DIR}/product_image_urls.parquet')

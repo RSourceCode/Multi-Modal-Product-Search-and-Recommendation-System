@@ -15,3 +15,29 @@ Finally, we decided to use 1 + 2 with an innovative idea to get image queries. T
 
 ### For Recommendation:
 We decided to use Amazon Review 23 ``` https://huggingface.co/datasets/McAuley-Lab/Amazon-Reviews-2023 ``` : This contains a large list of user reviews for various products. Being 5-core, each user has atleast 5 reviews and each product in this data also has atleast 5 reviews.
+
+## Baseline BM-25:
+Used a field weighted BM-25 as our baseline
+
+### Chosen Field Weights:
+```field_weights = {
+    "product_title": 1.0,
+    "product_brand": 1.5,
+    "product_bullet_point": 2.0,
+    "product_description": 2.0,
+    "product_color": 1.0
+}```
+
+### It's performance across various metrics:
+ ```K   Recall  Precision     NDCG  Latency_sec
+ 1 0.191594      0.250 0.240000     0.312952
+ 3 0.369732      0.200 0.256867     0.312314
+ 5 0.614775      0.206 0.315680     0.314204
+10 0.951524      0.166 0.385839     0.310816```
+
+## TFIDIF Feature vector
+Chose Top 10k words (as per there term frequency) from the entire corpus and learned this feature vector for all products and queries. Then compressed it using a MLP to 512 using Contrastive loss.
+
+The chosen MLP is:
+```hidden_dim=[2048] | activation=ReLU | loss=CosineEmbeddingLoss(0.2)```
+With losses as follows: ```Epoch [3/10]Train Loss: 0.0746Val Loss: 0.0733```

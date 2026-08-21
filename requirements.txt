@@ -3,3 +3,6 @@ numpy
 nltk
 scikit-learn
 chromadb
+torch
+torchvision
+git+https://github.com/openai/CLIP.git

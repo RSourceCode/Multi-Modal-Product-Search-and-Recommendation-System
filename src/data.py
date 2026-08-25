@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from datasets import load_dataset, Dataset, Features, Value, List
 
 # Data is quite large so moved it away from the working directory
-BASE_DIR =  "E:/Datasets/mm-prod-search-and-reco" # Path.absolute(__file__).parent
+BASE_DIR =  "../.." # Path.absolute(__file__).parent
 PROD_DATA_DIR = f"{BASE_DIR}/data/prod"
 REVIEW_DATA_DIR = f"{BASE_DIR}/data/review"
 
@@ -161,6 +161,25 @@ class Data():
         query_features_table = pd.read_parquet(f'{PROD_DATA_DIR}/query_features.parquet')
 
         return product_features_table, product_image_urls_table, products_test_table, product_train_table, queries_train_table, query_features_table
+
+    def get_review_data(self):
+        tables = [
+            "All_Beauty", "Amazon_Fashion", "Appliances", "Arts_Crafts_and_Sewing", "Automotive",
+            "Baby_Products", "Beauty_and_Personal_Care", "Books",
+            "CDs_and_Vinyl", "Cell_Phones_and_Accessories", "Clothing_Shoes_and_Jewelry",
+            "Digital_Music", "Electronics", "Gift_Cards", "Grocery_and_Gourmet_Food",
+            "Handmade_Products", "Health_and_Household", "Health_and_Personal_Care", "Home_and_Kitchen",
+            "Industrial_and_Scientific", "Kindle_Store", "Magazine_Subscriptions", "Movies_and_TV", "Musical_Instruments",
+            "Office_Products", "Patio_Lawn_and_Garden", "Pet_Supplies", "Software", "Sports_and_Outdoors", "Subscription_Boxes",
+            "Tools_and_Home_Improvement", "Toys_and_Games", "Video_Games",
+            ]
+        review_tables = {}
+        for table in tables:
+            review = pd.read_parquet(f"{REVIEW_DATA_DIR}/{table}_review.parquet")
+            meta = pd.read_parquet(f"{REVIEW_DATA_DIR}/{table}_meta.parquet")
+            review_tables[table] = meta.merge(review, how='inner', on='parent_asin')
+
+        return review_tables
 
     def clean_data(self, data):
         # product_title , product_description , product_bullet_point , product_brand , product_color <- clean these columns

@@ -129,29 +129,6 @@ class Data():
         if(choice1 == 'test'):
             return eng_table[int(len(eng_table) * (self.val_size + self.train_size)) : ]        
 
-    def get_prod_data(self):
-        product_image_urls_table = pd.read_parquet(f'{PROD_DATA_DIR}/product_image_urls.parquet')
-        product_train_table = pd.read_parquet(f'{PROD_DATA_DIR}/products_train.parquet')
-
-        prod_table = product_image_urls_table.merge(product_train_table, how='inner', on='product_id')
-
-        # Clean data
-        cols = [
-            "product_title",
-            "product_description",
-            "product_bullet_point",
-            "product_brand",
-            "product_color"
-        ]
-
-        d_clean_prod = prod_table
-
-        for col in cols:
-            # Remove URLs, Remove HTML tags, lowercase and remove punctuation
-            d_clean_prod[col]  = d_clean_prod[col].str.lower().str.replace(r"http\S+|www\S+|https\S+", "", regex=True).str.replace(r"<.*?>", "", regex=True).str.translate(str.maketrans("", "", string.punctuation))
-
-        return d_clean_prod[d_clean_prod['product_locale'] == 'us'].dropna().reset_index(drop=True)
-
     def get_data(self):
         product_features_table = pd.read_parquet(f'{PROD_DATA_DIR}/product_features.parquet')
         product_image_urls_table = pd.read_parquet(f'{PROD_DATA_DIR}/product_image_urls.parquet')

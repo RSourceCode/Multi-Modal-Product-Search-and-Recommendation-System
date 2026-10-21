@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from datasets import load_dataset, Dataset, Features, Value, List
 
 # Data is quite large so moved it away from the working directory
-BASE_DIR =  "E:/Datasets/mm-prod-search-and-reco" # Path.absolute(__file__).parent
+BASE_DIR =  "../.." # Path.absolute(__file__).parent
 PROD_DATA_DIR = f"{BASE_DIR}/data/prod"
 REVIEW_DATA_DIR = f"{BASE_DIR}/data/review"
 
@@ -129,44 +129,6 @@ class Data():
         if(choice1 == 'test'):
             return eng_table[int(len(eng_table) * (self.val_size + self.train_size)) : ]        
 
-    def get_prod_data(self):
-        product_image_urls_table = pd.read_parquet(f'{PROD_DATA_DIR}/product_image_urls.parquet')
-        product_train_table = pd.read_parquet(f'{PROD_DATA_DIR}/products_train.parquet')
-
-        prod_table = product_image_urls_table.merge(product_train_table, how='inner', on='product_id')
-
-        # Clean data
-        cols = [
-            "product_title",
-            "product_description",
-            "product_bullet_point",
-            "product_brand",
-            "product_color"
-        ]
-
-        d_clean_prod = prod_table
-
-        for col in cols:
-            # Remove URLs, Remove HTML tags, lowercase and remove punctuation
-            d_clean_prod[col]  = d_clean_prod[col].str.lower().str.replace(r"http\S+|www\S+|https\S+", "", regex=True).str.replace(r"<.*?>", "", regex=True).str.translate(str.maketrans("", "", string.punctuation))
-
-        return d_clean_prod[d_clean_prod['product_locale'] == 'us'].dropna().reset_index(drop=True)
-
-    def get_clip_embeddings(self, choice : Literal['train', 'validation', 'test'] = 'train'):
-        product_features_table = pd.read_parquet(f'{PROD_DATA_DIR}/product_features.parquet')
-        query_features_table = pd.read_parquet(f'{PROD_DATA_DIR}/query_features.parquet')
-        train_idx = int(len(product_features_table) * self.train_size)
-        val_idx = int(len(product_features_table) * (self.val_size + self.train_size))
-        if(choice == 'train'):
-            return product_features_table[ : train_idx], query_features_table[ : train_idx]
-
-        if(choice == 'validation'):
-            return product_features_table[ train_idx : val_idx], query_features_table[ train_idx : val_idx]
-
-        if(choice == 'test'):
-            return product_features_table[val_idx : ] , query_features_table[val_idx : ] 
-        return product_features_table, query_features_table
-
     def get_data(self):
         product_features_table = pd.read_parquet(f'{PROD_DATA_DIR}/product_features.parquet')
         product_image_urls_table = pd.read_parquet(f'{PROD_DATA_DIR}/product_image_urls.parquet')
@@ -176,6 +138,25 @@ class Data():
         query_features_table = pd.read_parquet(f'{PROD_DATA_DIR}/query_features.parquet')
 
         return product_features_table, product_image_urls_table, products_test_table, product_train_table, queries_train_table, query_features_table
+
+    def get_review_data(self):
+        tables = [
+            "All_Beauty", "Amazon_Fashion", "Appliances", "Arts_Crafts_and_Sewing", "Automotive",
+            "Baby_Products", "Beauty_and_Personal_Care", "Books",
+            "CDs_and_Vinyl", "Cell_Phones_and_Accessories", "Clothing_Shoes_and_Jewelry",
+            "Digital_Music", "Electronics", "Gift_Cards", "Grocery_and_Gourmet_Food",
+            "Handmade_Products", "Health_and_Household", "Health_and_Personal_Care", "Home_and_Kitchen",
+            "Industrial_and_Scientific", "Kindle_Store", "Magazine_Subscriptions", "Movies_and_TV", "Musical_Instruments",
+            "Office_Products", "Patio_Lawn_and_Garden", "Pet_Supplies", "Software", "Sports_and_Outdoors", "Subscription_Boxes",
+            "Tools_and_Home_Improvement", "Toys_and_Games", "Video_Games",
+            ]
+        review_tables = {}
+        for table in tables:
+            review = pd.read_parquet(f"{REVIEW_DATA_DIR}/{table}_review.parquet")
+            meta = pd.read_parquet(f"{REVIEW_DATA_DIR}/{table}_meta.parquet")
+            review_tables[table] = meta.merge(review, how='inner', on='parent_asin')
+
+        return review_tables
 
     def clean_data(self, data):
         # product_title , product_description , product_bullet_point , product_brand , product_color <- clean these columns
